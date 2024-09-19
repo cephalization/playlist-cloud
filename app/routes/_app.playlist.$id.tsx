@@ -5,6 +5,7 @@ import {
   ThreeDimensionalCanvas,
   ThreeDimensionalControls,
 } from "@arizeai/point-cloud";
+import { Text } from "@react-three/drei";
 import { LoaderFunctionArgs, json, redirect } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 import throttle from "just-throttle";
@@ -239,7 +240,7 @@ export default function Playlist() {
           setSelectedPoint(null);
           setFrozenMousePosition(null);
         }}
-        camera={{ position: [5, 5, 5], zoom: 10 }}
+        camera={{ position: [5, 5, 5], zoom: 1.9 }}
       >
         <ambientLight intensity={Math.PI / 2} />
         <spotLight
@@ -277,7 +278,16 @@ export default function Playlist() {
           }}
         />
         <gridHelper />
-        <axesHelper scale={2} position={[-0.1, -0.1, -0.1]} />
+        <axesHelper scale={2} position={[-0.1, 0.1, -0.1]} />
+        <Text position={[2.2, 0.2, 0]} fontSize={0.2} color="red">
+          {x}
+        </Text>
+        <Text position={[0, 2.2, 0]} fontSize={0.2} color="green">
+          {z}
+        </Text>
+        <Text position={[0, 0.2, 2.2]} fontSize={0.2} color="blue">
+          {y}
+        </Text>
       </ThreeDimensionalCanvas>
       {(frozenMousePosition || mousePosition) &&
         (selectedPoint || hoveredPoint) && (
