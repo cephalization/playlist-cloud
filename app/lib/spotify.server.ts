@@ -1,6 +1,8 @@
 import {
   playlistResponseSchema,
+  playlistTracksResponseSchema,
   playlistsResponseSchema,
+  tracksFeaturesResponseSchema,
   userResponseSchema,
 } from "~/lib/schemas";
 
@@ -62,6 +64,20 @@ export class SpotifyClient {
   async getPlaylist(id: string) {
     return playlistResponseSchema.parse(
       await this.request(`https://api.spotify.com/v1/playlists/${id}`),
+    );
+  }
+
+  async getPlaylistTracks(id: string) {
+    return playlistTracksResponseSchema.parse(
+      await this.request(`https://api.spotify.com/v1/playlists/${id}/tracks`),
+    );
+  }
+
+  async getTracksFeatures(ids: string[]) {
+    return tracksFeaturesResponseSchema.parse(
+      await this.request(
+        `https://api.spotify.com/v1/audio-features?ids=${ids.join(",")}`,
+      ),
     );
   }
 }
