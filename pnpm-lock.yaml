@@ -14,6 +14,9 @@ importers:
       '@hookform/resolvers':
         specifier: ^3.9.0
         version: 3.9.0(react-hook-form@7.53.0(react@18.3.1))
+      '@kodingdotninja/use-tailwind-breakpoint':
+        specifier: ^1.0.0
+        version: 1.0.0(react@18.3.1)(tailwindcss@3.4.12)
       '@radix-ui/react-accordion':
         specifier: ^1.2.0
         version: 1.2.0(@types/react-dom@18.3.0)(@types/react@18.3.7)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -747,6 +750,17 @@ packages:
 
   '@jspm/core@2.0.1':
     resolution: {integrity: sha512-Lg3PnLp0QXpxwLIAuuJboLeRaIhrgJjeuh797QADg3xz8wGLugQOS5DpsE8A6i6Adgzf+bacllkKZG3J0tGfDw==}
+
+  '@kodingdotninja/use-tailwind-breakpoint@1.0.0':
+    resolution: {integrity: sha512-UVN3Au5qBg7H7tkLxInvbozpigout08AWj6wQORtvAO/F67Gb3sAayuOgppHZTjMuQPAUbVL+TWMLwivuIxWtw==}
+    peerDependencies:
+      react: '>=16.8'
+      tailwindcss: '*'
+    peerDependenciesMeta:
+      react:
+        optional: true
+      tailwindcss:
+        optional: true
 
   '@mdx-js/mdx@2.3.0':
     resolution: {integrity: sha512-jLuwRlz8DQfQNiUCJR50Y09CGPq3fLtmtUQfVrj79E0JWu3dvsVcxVIcfhR5h0iXu+/z++zDrYeiJqifRynJkA==}
@@ -4730,6 +4744,11 @@ snapshots:
       '@jridgewell/sourcemap-codec': 1.5.0
 
   '@jspm/core@2.0.1': {}
+
+  '@kodingdotninja/use-tailwind-breakpoint@1.0.0(react@18.3.1)(tailwindcss@3.4.12)':
+    optionalDependencies:
+      react: 18.3.1
+      tailwindcss: 3.4.12
 
   '@mdx-js/mdx@2.3.0':
     dependencies:
