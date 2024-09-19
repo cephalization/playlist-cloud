@@ -5,13 +5,27 @@ import {
 } from "@remix-run/node";
 import { z, ZodError } from "zod";
 import { ENV } from "~/lib/env.server";
+import { SpotifyClient } from "~/lib/spotify.server";
 
-export const authSchema = z.object({
+// from spotify callback
+export const authResponseSchema = z.object({
   access_token: z.string(),
   token_type: z.string(),
   scope: z.string(),
   expires_in: z.number(),
-  expires_at: z.number().optional(),
+  refresh_token: z.string(),
+});
+
+export type AuthResponse = z.infer<typeof authResponseSchema>;
+
+// stored in session
+export const authSchema = z.object({
+  user_id: z.string(),
+  access_token: z.string(),
+  token_type: z.string(),
+  scope: z.string(),
+  expires_in: z.number(),
+  expires_at: z.number(),
   refresh_token: z.string(),
 });
 
@@ -34,7 +48,13 @@ export const getAuth = async (
   try {
     const session = await authSession.getSession(request.headers.get("Cookie"));
     const auth = authSchema.parse(session.get("auth"));
-    return auth;
+    if (auth.expires_at < Date.now()) {
+      // TODO: refresh token
+    }
+    return {
+      auth,
+      spotifyClient: new SpotifyClient({ accessToken: auth.access_token }),
+    };
   } catch (e) {
     if (e instanceof ZodError) {
       console.error("Auth error:\n", e.message);
@@ -48,22 +68,28 @@ export const getAuth = async (
   }
 };
 
+const makeAuthFromResponse = (response: AuthResponse, user_id: string) => {
+  return {
+    ...response,
+    expires_at: Date.now() + response.expires_in * 1000,
+    user_id,
+  };
+};
+
 export const setAuth = async (
   request: Request,
-  auth: Auth,
+  auth: AuthResponse,
+  user_id: string,
   { redirectTo }: { redirectTo?: string } = {},
 ) => {
   const session = await authSession.getSession(request.headers.get("Cookie"));
-  session.set("auth", {
-    ...auth,
-    expires_at: Date.now() + auth.expires_in * 1000,
-  });
+  session.set("auth", makeAuthFromResponse(auth, user_id));
   throw redirect(redirectTo ?? "/", {
     headers: { "Set-Cookie": await authSession.commitSession(session) },
   });
 };
 
-export const refreshAuth = async (refreshToken: string) => {
+export const refreshAuth = async (refreshToken: string): Promise<Auth> => {
   const response = await fetch(`https://accounts.spotify.com/api/token`, {
     method: "POST",
     headers: {
@@ -80,5 +106,8 @@ export const refreshAuth = async (refreshToken: string) => {
   });
 
   const data = await response.json();
-  return authSchema.parse(data);
+  const auth = authResponseSchema.parse(data);
+  const spotifyClient = new SpotifyClient({ accessToken: auth.access_token });
+  const userData = await spotifyClient.getUser();
+  return makeAuthFromResponse(auth, userData.id);
 };

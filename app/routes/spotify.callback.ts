@@ -1,7 +1,8 @@
-import { LoaderFunctionArgs, redirect } from "@remix-run/node";
+import { LoaderFunctionArgs } from "@remix-run/node";
 import { ZodError } from "zod";
-import { Auth, authSchema, setAuth } from "~/lib/auth.server";
+import { AuthResponse, authResponseSchema, setAuth } from "~/lib/auth.server";
 import { ENV } from "~/lib/env.server";
+import { SpotifyClient } from "~/lib/spotify.server";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const searchParams = new URLSearchParams(request.url.split("?")[1]);
@@ -29,9 +30,9 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   });
 
   const data = await response.json();
-  let authResponse: Auth;
+  let authResponse: AuthResponse;
   try {
-    authResponse = authSchema.parse(data);
+    authResponse = authResponseSchema.parse(data);
   } catch (e) {
     if (e instanceof ZodError) {
       console.error("Auth error:\n", e.message);
@@ -41,5 +42,10 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     throw new Error("Failed to authenticate");
   }
 
-  return await setAuth(request, authResponse);
+  const spotifyClient = new SpotifyClient({
+    accessToken: authResponse.access_token,
+  });
+  const userData = await spotifyClient.getUser();
+
+  return await setAuth(request, authResponse, userData.id);
 };
