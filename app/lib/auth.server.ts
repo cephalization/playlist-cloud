@@ -51,7 +51,11 @@ export const getAuth = async (
     const refresh = async () => {
       const r = await refreshAuth(auth.refresh_token);
       session.set("auth", r);
-      throw redirect(request.url);
+      throw redirect(request.url, {
+        headers: {
+          "Set-Cookie": await authSession.commitSession(session),
+        },
+      });
     };
     return {
       auth,
