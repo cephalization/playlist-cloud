@@ -1,4 +1,4 @@
-import { json, LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
+import { LoaderFunctionArgs, MetaFunction, json } from "@remix-run/node";
 import { Outlet } from "@remix-run/react";
 import invariant from "tiny-invariant";
 import { getAuth } from "~/lib/auth.server";
