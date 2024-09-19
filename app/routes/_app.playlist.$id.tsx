@@ -39,8 +39,9 @@ export const loader = async (args: LoaderFunctionArgs) => {
       { headers: { "Cache-Control": "private, max-age=300" } },
     );
   } catch (e) {
-    if (e instanceof Response) {
-      throw e;
+    if (e instanceof Promise) {
+      const r = await e;
+      throw r;
     }
     throw e;
   }
