@@ -14,6 +14,10 @@ import { renderToPipeableStream } from "react-dom/server";
 
 const ABORT_DELAY = 5_000;
 
+process.on("unhandledRejection", (reason) => {
+  console.error("Unhandled rejection:", reason);
+});
+
 export default function handleRequest(
   request: Request,
   responseStatusCode: number,

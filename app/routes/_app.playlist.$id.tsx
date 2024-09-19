@@ -12,6 +12,14 @@ import throttle from "just-throttle";
 import { useEffect, useMemo, useState } from "react";
 import invariant from "tiny-invariant";
 import { Card, CardDescription } from "~/components/ui/card";
+import { Label } from "~/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 import { Tooltip, TooltipContent } from "~/components/ui/tooltip";
 import { getAuth } from "~/lib/auth.server";
 import { PlaylistTrackResponse, TracksFeaturesResponse } from "~/lib/schemas";
@@ -45,9 +53,64 @@ const getStyleFromCoordinates = (x: number, y: number) => {
   };
 };
 
+const dimensions: (keyof TracksFeaturesResponse["audio_features"][number])[] = [
+  "acousticness",
+  "danceability",
+  "energy",
+  "valence",
+  "instrumentalness",
+  "liveness",
+  "speechiness",
+];
+
+const DimensionSelector = ({
+  value,
+  onChange,
+  label,
+}: {
+  value: keyof TracksFeaturesResponse["audio_features"][number];
+  onChange: (
+    value: keyof TracksFeaturesResponse["audio_features"][number],
+  ) => void;
+  label: string;
+}) => {
+  return (
+    <Label>
+      {label}
+      <Select
+        value={value}
+        onValueChange={(e) =>
+          onChange(e as keyof TracksFeaturesResponse["audio_features"][number])
+        }
+      >
+        <SelectTrigger>
+          <SelectValue placeholder="Select a dimension" />
+        </SelectTrigger>
+        <SelectContent>
+          {dimensions.map((dimension) => (
+            <SelectItem key={dimension} value={dimension}>
+              {dimension}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </Label>
+  );
+};
+
 export default function Playlist() {
   const { playlist, tracks, features } = useLoaderData<typeof loader>();
   const [hoveredPoint, setHoveredPoint] = useState<PointBaseProps | null>(null);
+  const [x, setX] =
+    useState<keyof TracksFeaturesResponse["audio_features"][number]>(
+      "acousticness",
+    );
+  const [y, setY] =
+    useState<keyof TracksFeaturesResponse["audio_features"][number]>(
+      "danceability",
+    );
+  const [z, setZ] =
+    useState<keyof TracksFeaturesResponse["audio_features"][number]>("energy");
   const [mousePosition, setMousePosition] = useState<{
     x: number;
     y: number;
@@ -89,7 +152,11 @@ export default function Playlist() {
   }, [features, tracks]);
   const data = useMemo(() => {
     return features.audio_features.map((feature) => ({
-      position: [feature.acousticness, feature.danceability, feature.energy],
+      position: [feature[x], feature[y], feature[z]] as [
+        number,
+        number,
+        number,
+      ],
       metaData: {
         uuid: feature.id,
         actualLabel: `${featuresAndTracksByTrackId.get(feature.id)?.track.name ?? feature.id}\n${featuresAndTracksByTrackId
@@ -98,10 +165,10 @@ export default function Playlist() {
           .join(", ")}`,
       },
     })) satisfies PointBaseProps[];
-  }, [features, featuresAndTracksByTrackId]);
+  }, [features, featuresAndTracksByTrackId, x, y, z]);
 
   return (
-    <>
+    <div className="h-full w-full relative">
       <ThreeDimensionalCanvas camera={{ position: [5, 5, 5], zoom: 10 }}>
         <pointLight position={[10, 10, 10]} />
         <ThreeDimensionalControls
@@ -139,6 +206,23 @@ export default function Playlist() {
           </CardDescription>
         </Card>
       )}
-    </>
+      <div className="absolute top-2 left-2 flex flex-col gap-2">
+        <DimensionSelector
+          value={x}
+          onChange={(value) => setX(value)}
+          label="X"
+        />
+        <DimensionSelector
+          value={y}
+          onChange={(value) => setY(value)}
+          label="Y"
+        />
+        <DimensionSelector
+          value={z}
+          onChange={(value) => setZ(value)}
+          label="Z"
+        />
+      </div>
+    </div>
   );
 }

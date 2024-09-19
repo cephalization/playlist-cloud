@@ -48,16 +48,23 @@ export const getAuth = async (
   try {
     const session = await authSession.getSession(request.headers.get("Cookie"));
     const auth = authSchema.parse(session.get("auth"));
-    if (auth.expires_at < Date.now()) {
-      // TODO: refresh token
-    }
+    const refresh = async () => {
+      const r = await refreshAuth(auth.refresh_token);
+      session.set("auth", r);
+      throw redirect(request.url, { status: 302 });
+    };
     return {
       auth,
-      spotifyClient: new SpotifyClient({ accessToken: auth.access_token }),
+      spotifyClient: new SpotifyClient({
+        accessToken: auth.access_token,
+        onRefresh: refresh,
+      }),
     };
   } catch (e) {
+    if (e instanceof Response && e.status === 302) {
+      throw e;
+    }
     if (e instanceof ZodError) {
-      console.error("Auth error:\n", e.message);
     } else {
       console.error("Auth error:\n", e);
     }
@@ -90,6 +97,7 @@ export const setAuth = async (
 };
 
 export const refreshAuth = async (refreshToken: string): Promise<Auth> => {
+  console.log("refreshingAuth");
   const response = await fetch(`https://accounts.spotify.com/api/token`, {
     method: "POST",
     headers: {
@@ -106,6 +114,7 @@ export const refreshAuth = async (refreshToken: string): Promise<Auth> => {
   });
 
   const data = await response.json();
+  data.refresh_token = refreshToken;
   const auth = authResponseSchema.parse(data);
   const spotifyClient = new SpotifyClient({ accessToken: auth.access_token });
   const userData = await spotifyClient.getUser();

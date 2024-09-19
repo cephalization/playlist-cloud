@@ -36,13 +36,9 @@ export class SpotifyClient {
       ...options,
     });
     if (response.status === 401 && retry && this.onRefresh) {
-      const newToken = await this.onRefresh();
-      if (newToken) {
-        this.accessToken = newToken;
-        return this.request(url, options, false);
-      } else {
-        throw new Error("Failed to refresh access token");
-      }
+      console.log("refreshing token in client");
+      // this should throw a redirect
+      this.onRefresh();
     } else if (response.status === 401) {
       throw new Error("Unauthorized");
     }

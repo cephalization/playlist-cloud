@@ -24,16 +24,17 @@ export const loader = async (args: LoaderFunctionArgs) => {
   invariant(authenticated, "Not authenticated");
   const { auth, spotifyClient } = authenticated;
   const playlists = await spotifyClient.getPlaylists();
-  return json(
-    { authenticated: auth, playlists },
-    { headers: { "Cache-Control": "private, max-age=300" } },
-  );
+  return json({
+    expiresAt: auth.expires_at,
+    userId: auth.user_id,
+    playlists,
+  });
 };
 
 export default function Index() {
   const panelRef = useRef<ImperativePanelGroupHandle>(null);
   const { state } = useNavigation();
-  const { authenticated, playlists } = useLoaderData<typeof loader>();
+  const { expiresAt, userId, playlists } = useLoaderData<typeof loader>();
   const isDesktop = useBreakpoint("sm");
   const [date, setDate] = useState<Date | null>(null);
   const togglePanel = () => {
@@ -55,9 +56,9 @@ export default function Index() {
     }
   };
   useEffect(() => {
-    const date = new Date(authenticated.expires_at);
+    const date = new Date(expiresAt);
     setDate(date);
-  }, [authenticated]);
+  }, [expiresAt]);
   useEffect(() => {
     if (!isDesktop) {
       openPlaylists();
@@ -75,7 +76,7 @@ export default function Index() {
         >
           Playlist Cloud
         </Link>
-        Hi, {authenticated.user_id}
+        Hi, {userId}
         {date ? (
           <pre className="max-w-full overflow-auto">
             Session Expires at: {date.toLocaleTimeString()}{" "}
