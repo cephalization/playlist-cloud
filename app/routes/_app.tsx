@@ -9,7 +9,7 @@ import {
 import { useEffect, useRef, useState } from "react";
 import { ImperativePanelGroupHandle } from "react-resizable-panels";
 import invariant from "tiny-invariant";
-import { Button } from "~/components/ui/button";
+import { Button, buttonVariants } from "~/components/ui/button";
 import {
   ResizableHandle,
   ResizablePanel,
@@ -25,7 +25,6 @@ export const loader = async (args: LoaderFunctionArgs) => {
   const { auth, spotifyClient } = authenticated;
   const playlists = await spotifyClient.getPlaylists();
   return json({
-    expiresAt: auth.expires_at,
     userId: auth.user_id,
     playlists,
   });
@@ -34,9 +33,8 @@ export const loader = async (args: LoaderFunctionArgs) => {
 export default function Index() {
   const panelRef = useRef<ImperativePanelGroupHandle>(null);
   const { state } = useNavigation();
-  const { expiresAt, userId, playlists } = useLoaderData<typeof loader>();
+  const { userId, playlists } = useLoaderData<typeof loader>();
   const isDesktop = useBreakpoint("sm");
-  const [date, setDate] = useState<Date | null>(null);
   const togglePanel = () => {
     if (isDesktop) return;
     const layout = panelRef.current?.getLayout();
@@ -56,10 +54,6 @@ export default function Index() {
     }
   };
   useEffect(() => {
-    const date = new Date(expiresAt);
-    setDate(date);
-  }, [expiresAt]);
-  useEffect(() => {
     if (!isDesktop) {
       openPlaylists();
     } else {
@@ -70,21 +64,21 @@ export default function Index() {
   return (
     <div className="p-4 flex flex-col gap-4 max-h-full">
       <div className="relative flex flex-col gap-2 p-4 bg-card rounded-md">
-        <Link
-          to="/"
-          className="text-2xl font-bold text-primary hover:underline underline-offset-2"
-        >
-          Playlist Cloud
-        </Link>
+        <div className="flex items-center justify-between w-full">
+          <Link
+            to="/"
+            className="text-2xl font-bold text-primary hover:underline underline-offset-2"
+          >
+            Playlist Cloud
+          </Link>
+          <Link
+            className={cn(buttonVariants({ variant: "ghost" }))}
+            to="/logout"
+          >
+            Logout
+          </Link>
+        </div>
         Hi, {userId}
-        {date ? (
-          <pre className="max-w-full overflow-auto">
-            Session Expires at: {date.toLocaleTimeString()}{" "}
-            {date.toLocaleDateString()}
-          </pre>
-        ) : (
-          <p>Loading...</p>
-        )}
         {loading && (
           <div className="h-1 w-[99%] rounded-md bg-primary/10 overflow-hidden absolute -bottom-2.5 left-[0.5%] animate-in">
             <div className="h-full bg-primary animate-indeterminate-progress"></div>
