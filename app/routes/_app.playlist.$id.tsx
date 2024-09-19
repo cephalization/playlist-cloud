@@ -12,7 +12,7 @@ import throttle from "just-throttle";
 import { useEffect, useMemo, useState } from "react";
 import invariant from "tiny-invariant";
 import { ZodError } from "zod";
-import { buttonVariants } from "~/components/ui/button";
+import { Button, buttonVariants } from "~/components/ui/button";
 import { Card, CardDescription } from "~/components/ui/card";
 import { Label } from "~/components/ui/label";
 import {
@@ -157,6 +157,7 @@ const DimensionSelector = ({
 export default function Playlist() {
   const { tracks, features } = useLoaderData<typeof loader>();
   const [autoplay, setAutoplay] = useState(true);
+  const [hideControls, setHideControls] = useState(false);
   const [hoveredPoint, setHoveredPoint] = useState<PointBaseProps | null>(null);
   const [selectedPoint, setSelectedPoint] = useState<PointBaseProps | null>(
     null,
@@ -234,7 +235,7 @@ export default function Playlist() {
   }, [features, featuresAndTracksByTrackId, x, y, z]);
 
   return (
-    <div className="h-full w-full relative">
+    <div className="h-full w-full relative select-none">
       <ThreeDimensionalCanvas
         onPointerMissed={() => {
           setSelectedPoint(null);
@@ -335,28 +336,38 @@ export default function Playlist() {
           </Card>
         )}
       <div className="absolute top-2 left-2 flex flex-col gap-2">
-        <DimensionSelector
-          value={x}
-          onChange={(value) => setX(value)}
-          label="X"
-        />
-        <DimensionSelector
-          value={y}
-          onChange={(value) => setY(value)}
-          label="Y"
-        />
-        <DimensionSelector
-          value={z}
-          onChange={(value) => setZ(value)}
-          label="Z"
-        />
-        <Label className="bg-secondary px-4 py-2 rounded-md">
-          <span>Autoplay on Click</span>
-          <Switch
-            checked={autoplay}
-            onCheckedChange={(checked) => setAutoplay(checked)}
+        <Button onClick={() => setHideControls((h) => !h)}>
+          {hideControls ? "Show" : "Hide"} Controls
+        </Button>
+        <div
+          className={cn(
+            "flex flex-col gap-2 transition-transform",
+            hideControls && "-translate-x-[125%]",
+          )}
+        >
+          <DimensionSelector
+            value={x}
+            onChange={(value) => setX(value)}
+            label="X"
           />
-        </Label>
+          <DimensionSelector
+            value={y}
+            onChange={(value) => setY(value)}
+            label="Y"
+          />
+          <DimensionSelector
+            value={z}
+            onChange={(value) => setZ(value)}
+            label="Z"
+          />
+          <Label className="bg-secondary px-4 py-2 rounded-md">
+            <span>Autoplay on Click</span>
+            <Switch
+              checked={autoplay}
+              onCheckedChange={(checked) => setAutoplay(checked)}
+            />
+          </Label>
+        </div>
       </div>
     </div>
   );
