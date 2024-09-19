@@ -2,7 +2,7 @@ import { z } from "zod";
 
 export const userResponseSchema = z.object({
   country: z.string(),
-  display_name: z.string(),
+  display_name: z.string().nullish(),
   email: z.string(),
   explicit_content: z.object({
     filter_enabled: z.boolean(),
@@ -19,14 +19,16 @@ export const userResponseSchema = z.object({
     .nullish(),
   href: z.string(),
   id: z.string(),
-  images: z.array(
-    z.object({
-      url: z.string(),
-      height: z.number(),
-      width: z.number(),
-    }),
-  ),
-  product: z.string(),
+  images: z
+    .array(
+      z.object({
+        url: z.string(),
+        height: z.number(),
+        width: z.number(),
+      }),
+    )
+    .nullish(),
+  product: z.string().nullish(),
   type: z.string(),
   uri: z.string(),
 });
