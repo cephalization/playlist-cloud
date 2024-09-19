@@ -5,7 +5,6 @@ import {
   ThreeDimensionalCanvas,
   ThreeDimensionalControls,
 } from "@arizeai/point-cloud";
-import { TooltipPortal } from "@radix-ui/react-tooltip";
 import { LoaderFunctionArgs, json } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 import throttle from "just-throttle";
@@ -20,25 +19,31 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import { Tooltip, TooltipContent } from "~/components/ui/tooltip";
 import { getAuth } from "~/lib/auth.server";
 import { PlaylistTrackResponse, TracksFeaturesResponse } from "~/lib/schemas";
 
 export const loader = async (args: LoaderFunctionArgs) => {
-  const authenticated = await getAuth(args, { redirectTo: "/login" });
-  invariant(authenticated, "Not authenticated");
-  const { spotifyClient } = authenticated;
-  const { id } = args.params;
-  invariant(id, "No playlist id");
-  const playlist = await spotifyClient.getPlaylist(id);
-  const tracks = await spotifyClient.getPlaylistTracks(id);
-  const features = await spotifyClient.getTracksFeatures(
-    tracks.items.map(({ track }) => track.id),
-  );
-  return json(
-    { playlist, tracks, features },
-    { headers: { "Cache-Control": "private, max-age=300" } },
-  );
+  try {
+    const authenticated = await getAuth(args, { redirectTo: "/login" });
+    invariant(authenticated, "Not authenticated");
+    const { spotifyClient } = authenticated;
+    const { id } = args.params;
+    invariant(id, "No playlist id");
+    const playlist = await spotifyClient.getPlaylist(id);
+    const tracks = await spotifyClient.getPlaylistTracks(id);
+    const features = await spotifyClient.getTracksFeatures(
+      tracks.items.map(({ track }) => track.id),
+    );
+    return json(
+      { playlist, tracks, features },
+      { headers: { "Cache-Control": "private, max-age=300" } },
+    );
+  } catch (e) {
+    if (e instanceof Response) {
+      throw e;
+    }
+    throw e;
+  }
 };
 
 const getStyleFromCoordinates = (x: number, y: number) => {
