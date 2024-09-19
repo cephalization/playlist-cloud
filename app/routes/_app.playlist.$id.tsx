@@ -55,6 +55,14 @@ export const loader = async (args: LoaderFunctionArgs) => {
 };
 
 const getStyleFromCoordinates = (x: number, y: number) => {
+  // if window is smaller than 768px, then just center the tooltip
+  if (window.innerWidth < 768) {
+    return {
+      left: "50%",
+      top: "30%",
+      transform: "translate(-50%, -50%)",
+    };
+  }
   // if x is greater than half of the window width, then the tooltip should be on the left side of the coordinates, and vice versa
   const isOnRightSide = x > window.innerWidth / 2;
   const isOnBottomSide = y > window.innerHeight / 2;
@@ -274,7 +282,7 @@ export default function Playlist() {
       {(frozenMousePosition || mousePosition) &&
         (selectedPoint || hoveredPoint) && (
           <Card
-            className="fixed z-50 p-4 shadow-2xl bg-secondary"
+            className="fixed z-50 p-4 shadow-2xl bg-secondary outline outline-primary/30"
             style={getStyleFromCoordinates(
               frozenMousePosition?.x ?? mousePosition?.x ?? 0,
               frozenMousePosition?.y ?? mousePosition?.y ?? 0,
