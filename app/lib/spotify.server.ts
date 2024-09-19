@@ -58,9 +58,14 @@ export class SpotifyClient {
   }
 
   async getPlaylist(id: string) {
-    return playlistResponseSchema.parse(
-      await this.request(`https://api.spotify.com/v1/playlists/${id}`),
-    );
+    try {
+      const r = await this.request(
+        `https://api.spotify.com/v1/playlists/${id}`,
+      );
+      return playlistResponseSchema.parse(r);
+    } catch (e) {
+      throw e;
+    }
   }
 
   async getPlaylistTracks(id: string) {

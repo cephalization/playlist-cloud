@@ -51,7 +51,7 @@ export const getAuth = async (
     const refresh = async () => {
       const r = await refreshAuth(auth.refresh_token);
       session.set("auth", r);
-      throw redirect(request.url, { status: 302 });
+      throw redirect(request.url);
     };
     return {
       auth,
