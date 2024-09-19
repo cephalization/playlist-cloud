@@ -1,5 +1,5 @@
-import { z } from "zod";
 import { parseEnv } from "znv";
+import { z } from "zod";
 
 export const ENV = parseEnv(process.env, {
   SPOTIFY_CLIENT_ID: z.string(),

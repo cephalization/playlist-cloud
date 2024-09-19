@@ -1,9 +1,9 @@
 import {
-  createCookieSessionStorage,
   LoaderFunctionArgs,
+  createCookieSessionStorage,
   redirect,
 } from "@remix-run/node";
-import { z, ZodError } from "zod";
+import { ZodError, z } from "zod";
 import { ENV } from "~/lib/env.server";
 import { SpotifyClient } from "~/lib/spotify.server";
 
