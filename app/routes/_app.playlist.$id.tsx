@@ -11,6 +11,7 @@ import { useLoaderData } from "@remix-run/react";
 import throttle from "just-throttle";
 import { useEffect, useMemo, useState } from "react";
 import invariant from "tiny-invariant";
+import { Pane } from "tweakpane";
 import { Card, CardDescription } from "~/components/ui/card";
 import { Tooltip, TooltipContent } from "~/components/ui/tooltip";
 import { getAuth } from "~/lib/auth.server";
@@ -45,8 +46,118 @@ const getStyleFromCoordinates = (x: number, y: number) => {
   };
 };
 
+const DEFAULT_PARAMS = {
+  // camera
+  cameraX: 10,
+  cameraY: 10,
+  cameraZ: 10,
+  zoom: 10,
+  // pointlight
+  pointLightX: 10,
+  pointLightY: 10,
+  pointLightZ: 10,
+  pointLightIntensity: 10,
+  pointLightColor: "#FFF",
+  // pointcloud
+  pointCloudColor: "#22C55E",
+} satisfies {};
+type Params = typeof DEFAULT_PARAMS;
+
+const usePaneSettings = () => {
+  const [pane, setPane] = useState<Pane | null>(null);
+  const [params, setParams] = useState<Params>(() => ({ ...DEFAULT_PARAMS }));
+
+  useEffect(() => {
+    const pane = new Pane();
+    const camera = pane.addFolder({ title: "Camera" });
+    camera
+      .addBinding(params, "cameraX", { step: 0.01, min: -10, max: 10 })
+      .on("change", ({ value }) => {
+        setParams((prev) => ({ ...prev, cameraX: value }));
+      });
+    camera
+      .addBinding(params, "cameraY", { step: 0.01, min: -10, max: 10 })
+      .on("change", ({ value }) => {
+        setParams((prev) => ({ ...prev, cameraY: value }));
+      });
+    camera
+      .addBinding(params, "cameraZ", { step: 0.01, min: -10, max: 10 })
+      .on("change", ({ value }) => {
+        setParams((prev) => ({ ...prev, cameraZ: value }));
+      });
+    camera
+      .addBinding(params, "zoom", { step: 0.01, min: 0, max: 20 })
+      .on("change", ({ value }) => {
+        setParams((prev) => ({ ...prev, zoom: value }));
+      });
+    const pointLight = pane.addFolder({ title: "Point Light" });
+    pointLight
+      .addBinding(params, "pointLightX", {
+        step: 0.01,
+        min: -10,
+        max: 10,
+      })
+      .on("change", ({ value }) => {
+        setParams((prev) => ({ ...prev, pointLightX: value }));
+      });
+    pointLight
+      .addBinding(params, "pointLightY", {
+        step: 0.01,
+        min: -10,
+        max: 10,
+      })
+      .on("change", ({ value }) => {
+        setParams((prev) => ({ ...prev, pointLightY: value }));
+      });
+    pointLight
+      .addBinding(params, "pointLightZ", {
+        step: 0.01,
+        min: -10,
+        max: 10,
+      })
+      .on("change", ({ value }) => {
+        setParams((prev) => ({ ...prev, pointLightZ: value }));
+      });
+    pointLight
+      .addBinding(params, "pointLightIntensity", {
+        step: 0.01,
+        min: 0,
+        max: 20,
+      })
+      .on("change", ({ value }) => {
+        setParams((prev) => ({ ...prev, pointLightIntensity: value }));
+      });
+    pointLight
+      .addBinding(params, "pointLightColor", {
+        view: "colo",
+        picker: "inline",
+      })
+      .on("change", ({ value }) => {
+        setParams((prev) => ({ ...prev, pointLightColor: value }));
+      });
+    const pointCloud = pane.addFolder({ title: "Point Cloud" });
+    pointCloud
+      .addBinding(params, "pointCloudColor", {
+        view: "color",
+        picker: "inline",
+      })
+      .on("change", ({ value }) => {
+        setParams((prev) => ({ ...prev, pointCloudColor: value }));
+      });
+
+    setPane(pane);
+
+    return () => {
+      pane.dispose();
+    };
+  }, []);
+
+  return { pane, settings: params, setSettings: setParams };
+};
+
 export default function Playlist() {
   const { playlist, tracks, features } = useLoaderData<typeof loader>();
+  const { settings, setSettings } = usePaneSettings();
   const [hoveredPoint, setHoveredPoint] = useState<PointBaseProps | null>(null);
   const [mousePosition, setMousePosition] = useState<{
     x: number;
@@ -102,16 +213,36 @@ export default function Playlist() {
 
   return (
     <>
-      <ThreeDimensionalCanvas camera={{ position: [5, 5, 5], zoom: 10 }}>
-        <pointLight position={[10, 10, 10]} />
-        <ThreeDimensionalControls enablePan />
+      <ThreeDimensionalCanvas
+        camera={{
+          position: [settings.cameraX, settings.cameraY, settings.cameraZ],
+          zoom: settings.zoom,
+        }}
+      >
+        <pointLight
+          position={[
+            settings.pointLightX,
+            settings.pointLightY,
+            settings.pointLightZ,
+          ]}
+          intensity={settings.pointLightIntensity}
+          color={settings.pointLightColor}
+        />
+        {/* <ambientLight intensity={0.5} /> */}
+        <ThreeDimensionalControls
+          enablePan
+          panSpeed={0.15}
+          zoomSpeed={0.2}
+          autoRotateSpeed={0.2}
+        />
         <Points
           data={data}
-          pointProps={{ color: "#22C55E" }}
+          pointProps={{ color: settings.pointCloudColor }}
           onPointHovered={setHoveredPoint}
+          material="standard"
           onPointerLeave={() => setHoveredPoint(null)}
         />
-        <axesHelper />
+        <gridHelper />
       </ThreeDimensionalCanvas>
       {mousePosition && hoveredPoint && (
         <Card
