@@ -21,6 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
+import { Switch } from "~/components/ui/switch";
 import { getAuth } from "~/lib/auth.server";
 import { PlaylistTrackResponse, TracksFeaturesResponse } from "~/lib/schemas";
 import { cn } from "~/lib/utils";
@@ -146,7 +147,11 @@ const DimensionSelector = ({
 
 export default function Playlist() {
   const { tracks, features } = useLoaderData<typeof loader>();
+  const [autoplay, setAutoplay] = useState(true);
   const [hoveredPoint, setHoveredPoint] = useState<PointBaseProps | null>(null);
+  const [selectedPoint, setSelectedPoint] = useState<PointBaseProps | null>(
+    null,
+  );
   const [x, setX] =
     useState<keyof TracksFeaturesResponse["audio_features"][number]>("valence");
   const [y, setY] =
@@ -156,6 +161,10 @@ export default function Playlist() {
   const [z, setZ] =
     useState<keyof TracksFeaturesResponse["audio_features"][number]>("energy");
   const [mousePosition, setMousePosition] = useState<{
+    x: number;
+    y: number;
+  } | null>(null);
+  const [frozenMousePosition, setFrozenMousePosition] = useState<{
     x: number;
     y: number;
   } | null>(null);
@@ -196,7 +205,7 @@ export default function Playlist() {
   }, [features, tracks]);
   const data = useMemo(() => {
     return features.audio_features.map((feature) => ({
-      position: [feature[x], feature[y], feature[z]].map(
+      position: [feature[x], Number(feature[z]), feature[y]].map(
         (n) => Number(n) * 1.5,
       ) as [number, number, number],
       metaData: {
@@ -217,7 +226,13 @@ export default function Playlist() {
 
   return (
     <div className="h-full w-full relative">
-      <ThreeDimensionalCanvas camera={{ position: [5, 5, 5], zoom: 10 }}>
+      <ThreeDimensionalCanvas
+        onPointerMissed={() => {
+          setSelectedPoint(null);
+          setFrozenMousePosition(null);
+        }}
+        camera={{ position: [5, 5, 5], zoom: 10 }}
+      >
         <ambientLight intensity={Math.PI / 2} />
         <spotLight
           position={[10, 10, 10]}
@@ -228,42 +243,79 @@ export default function Playlist() {
         />
         <pointLight position={[-10, -10, -10]} decay={0} intensity={Math.PI} />
         <ThreeDimensionalControls
-          enablePan
+          enablePan={selectedPoint === null}
+          enableZoom={selectedPoint === null}
+          enableRotate={selectedPoint === null}
           panSpeed={0.15}
           zoomSpeed={0.2}
           autoRotateSpeed={0.2}
         />
         <Points
           data={data}
-          pointProps={{ color: "#22C55E" }}
+          pointProps={{
+            color: (p) =>
+              selectedPoint === null
+                ? "#22C55E"
+                : selectedPoint === p
+                  ? "#22C55E"
+                  : "#FFFFFF",
+          }}
           onPointHovered={setHoveredPoint}
           onPointerLeave={() => setHoveredPoint(null)}
           material="meshMatcap"
+          onPointClicked={(e) => {
+            setSelectedPoint((sp) => (sp === e ? null : e));
+            setFrozenMousePosition(mousePosition);
+          }}
         />
         <gridHelper />
-        <axesHelper position={[-0.1, -0.1, -0.1]} />
+        <axesHelper scale={2} position={[-0.1, -0.1, -0.1]} />
       </ThreeDimensionalCanvas>
-      {mousePosition && hoveredPoint && (
-        <Card
-          className="fixed z-50 p-4 shadow-2xl bg-secondary"
-          style={getStyleFromCoordinates(mousePosition.x, mousePosition.y)}
-        >
-          <CardDescription className="flex gap-2">
-            <img
-              src={
-                featuresAndTracksByTrackId
-                  .get(hoveredPoint.metaData.uuid)
-                  ?.track.album.images.at(-1)?.url
-              }
-              alt={hoveredPoint.metaData.actualLabel}
-              className="w-14 h-14"
-            />
-            <span className="text-lg whitespace-pre-wrap">
-              {hoveredPoint?.metaData.actualLabel}
-            </span>
-          </CardDescription>
-        </Card>
-      )}
+      {(frozenMousePosition || mousePosition) &&
+        (selectedPoint || hoveredPoint) && (
+          <Card
+            className="fixed z-50 p-4 shadow-2xl bg-secondary"
+            style={getStyleFromCoordinates(
+              frozenMousePosition?.x ?? mousePosition?.x ?? 0,
+              frozenMousePosition?.y ?? mousePosition?.y ?? 0,
+            )}
+          >
+            <CardDescription className="flex flex-col gap-2 select-none">
+              <img
+                src={
+                  featuresAndTracksByTrackId
+                    .get(
+                      selectedPoint?.metaData.uuid ??
+                        hoveredPoint?.metaData.uuid ??
+                        "",
+                    )
+                    ?.track.album.images.at(-1)?.url
+                }
+                alt={
+                  selectedPoint?.metaData.actualLabel ??
+                  hoveredPoint?.metaData.actualLabel ??
+                  ""
+                }
+                className="w-14 h-14"
+              />
+              <span className="text-lg whitespace-pre-wrap">
+                {selectedPoint?.metaData.actualLabel ??
+                  hoveredPoint?.metaData.actualLabel ??
+                  ""}
+              </span>
+              {selectedPoint && (
+                <audio
+                  src={
+                    featuresAndTracksByTrackId.get(selectedPoint.metaData.uuid)
+                      ?.track.preview_url ?? ""
+                  }
+                  autoPlay={autoplay}
+                  controls
+                />
+              )}
+            </CardDescription>
+          </Card>
+        )}
       <div className="absolute top-2 left-2 flex flex-col gap-2">
         <DimensionSelector
           value={x}
@@ -280,6 +332,13 @@ export default function Playlist() {
           onChange={(value) => setZ(value)}
           label="Z"
         />
+        <Label className="bg-secondary px-4 py-2 rounded-md">
+          <span>Autoplay on Click</span>
+          <Switch
+            checked={autoplay}
+            onCheckedChange={(checked) => setAutoplay(checked)}
+          />
+        </Label>
       </div>
     </div>
   );
