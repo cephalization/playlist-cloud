@@ -1,4 +1,4 @@
-import type { LinksFunction } from "@remix-run/node";
+import type { LinksFunction, MetaFunction } from "@remix-run/node";
 import {
   Links,
   Meta,
@@ -8,6 +8,13 @@ import {
 } from "@remix-run/react";
 
 import "./tailwind.css";
+
+export const meta: MetaFunction = () => {
+  return [
+    { title: "Playlist Cloud" },
+    { name: "description", content: "Visualize your Spotify playlists in 3D" },
+  ];
+};
 
 export const links: LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },

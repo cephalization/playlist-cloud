@@ -1,4 +1,8 @@
-import { playlistsResponseSchema, userResponseSchema } from "~/lib/schemas";
+import {
+  playlistResponseSchema,
+  playlistsResponseSchema,
+  userResponseSchema,
+} from "~/lib/schemas";
 
 export class SpotifyClient {
   private accessToken: string;
@@ -52,6 +56,12 @@ export class SpotifyClient {
   async getPlaylists() {
     return playlistsResponseSchema.parse(
       await this.request("https://api.spotify.com/v1/me/playlists"),
+    );
+  }
+
+  async getPlaylist(id: string) {
+    return playlistResponseSchema.parse(
+      await this.request(`https://api.spotify.com/v1/playlists/${id}`),
     );
   }
 }
