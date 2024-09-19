@@ -111,7 +111,7 @@ export default function Index() {
                 >
                   {playlist.images?.at(-1)?.url && (
                     <img
-                      src={playlist.images.at(-1)!.url}
+                      src={playlist.images.at(-1)?.url}
                       alt={playlist.name}
                       height={Math.min(
                         playlist.images.at(-1)?.height ?? 32,

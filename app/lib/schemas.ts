@@ -43,13 +43,15 @@ export const playlistResponseSchema = z.object({
   }),
   href: z.string(),
   id: z.string(),
-  images: z.array(
-    z.object({
-      url: z.string(),
-      height: z.number().nullish(),
-      width: z.number().nullish(),
-    }),
-  ),
+  images: z
+    .array(
+      z.object({
+        url: z.string(),
+        height: z.number().nullish(),
+        width: z.number().nullish(),
+      }),
+    )
+    .nullish(),
   name: z.string(),
   owner: userResponseSchema.partial(),
   public: z.boolean(),
