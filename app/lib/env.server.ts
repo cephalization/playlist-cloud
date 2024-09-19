@@ -1,5 +1,8 @@
+import dotenv from "dotenv";
 import { parseEnv } from "znv";
 import { z } from "zod";
+
+dotenv.config();
 
 export const ENV = parseEnv(process.env, {
   SPOTIFY_CLIENT_ID: z.string(),

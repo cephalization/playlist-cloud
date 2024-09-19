@@ -6,6 +6,7 @@ import {
   useLoaderData,
   useNavigation,
 } from "@remix-run/react";
+import { useEffect, useState } from "react";
 import invariant from "tiny-invariant";
 import {
   ResizableHandle,
@@ -29,18 +30,24 @@ export const loader = async (args: LoaderFunctionArgs) => {
 export default function Index() {
   const { state } = useNavigation();
   const { authenticated, playlists } = useLoaderData<typeof loader>();
-  const date = new Date(authenticated.expires_at);
+  const [date, setDate] = useState<Date | null>(null);
+  useEffect(() => {
+    const date = new Date(authenticated.expires_at);
+    setDate(date);
+  }, [authenticated]);
   const loading = state !== "idle";
   return (
     <div className="p-4 flex flex-col gap-4 max-h-full">
       <div className="relative flex flex-col gap-2 p-4 bg-card rounded-md">
         <h1 className="text-2xl font-bold text-primary">Playlist Cloud</h1>
         Hi, {authenticated.user_id}
-        {date && (
+        {date ? (
           <pre>
             Session Expires at: {date.toLocaleTimeString()}{" "}
             {date.toLocaleDateString()}
           </pre>
+        ) : (
+          <p>Loading...</p>
         )}
         {loading && (
           <div className="h-1 w-[99%] rounded-md bg-primary/10 overflow-hidden absolute -bottom-2.5 left-[0.5%] animate-in">
@@ -82,7 +89,7 @@ export default function Index() {
           </ul>
         </ResizablePanel>
         <ResizableHandle withHandle />
-        <ResizablePanel>
+        <ResizablePanel defaultSize={80}>
           <div className="h-full overflow-auto p-4 bg-card rounded-md">
             <Outlet />
           </div>
