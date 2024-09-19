@@ -104,7 +104,12 @@ export default function Playlist() {
     <>
       <ThreeDimensionalCanvas camera={{ position: [5, 5, 5], zoom: 10 }}>
         <pointLight position={[10, 10, 10]} />
-        <ThreeDimensionalControls enablePan />
+        <ThreeDimensionalControls
+          enablePan
+          panSpeed={0.15}
+          zoomSpeed={0.2}
+          autoRotateSpeed={0.2}
+        />
         <Points
           data={data}
           pointProps={{ color: "#22C55E" }}
