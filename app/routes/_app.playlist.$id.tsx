@@ -5,11 +5,13 @@ import {
   ThreeDimensionalCanvas,
   ThreeDimensionalControls,
 } from "@arizeai/point-cloud";
-import { LoaderFunctionArgs, json } from "@remix-run/node";
+import { LoaderFunctionArgs, json, redirect } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 import throttle from "just-throttle";
 import { useEffect, useMemo, useState } from "react";
 import invariant from "tiny-invariant";
+import { ZodError } from "zod";
+import { buttonVariants } from "~/components/ui/button";
 import { Card, CardDescription } from "~/components/ui/card";
 import { Label } from "~/components/ui/label";
 import {
@@ -21,6 +23,7 @@ import {
 } from "~/components/ui/select";
 import { getAuth } from "~/lib/auth.server";
 import { PlaylistTrackResponse, TracksFeaturesResponse } from "~/lib/schemas";
+import { cn } from "~/lib/utils";
 
 export const loader = async (args: LoaderFunctionArgs) => {
   try {
@@ -35,10 +38,13 @@ export const loader = async (args: LoaderFunctionArgs) => {
       tracks.items.map(({ track }) => track.id),
     );
     return json(
-      { playlist, tracks, features },
+      { tracks, features },
       { headers: { "Cache-Control": "private, max-age=300" } },
     );
   } catch (e) {
+    if (e instanceof ZodError) {
+      throw redirect("/");
+    }
     if (e instanceof Promise) {
       const r = await e;
       throw r;
@@ -59,14 +65,38 @@ const getStyleFromCoordinates = (x: number, y: number) => {
   };
 };
 
-const dimensions: (keyof TracksFeaturesResponse["audio_features"][number])[] = [
-  "acousticness",
-  "danceability",
-  "energy",
-  "valence",
-  "instrumentalness",
-  "liveness",
-  "speechiness",
+const dimensions: [
+  keyof TracksFeaturesResponse["audio_features"][number],
+  string,
+][] = [
+  [
+    "acousticness",
+    "A confidence measure from 0.0 to 1.0 of whether the track is acoustic. 1.0 represents high confidence the track is acoustic.",
+  ],
+  [
+    "danceability",
+    "Danceability describes how suitable a track is for dancing based on a combination of musical elements including tempo, rhythm stability, beat strength, and overall regularity. A value of 0.0 is least danceable and 1.0 is most danceable.",
+  ],
+  [
+    "energy",
+    "Energy is a measure from 0.0 to 1.0 and represents a perceptual measure of intensity and activity. Typically, energetic tracks feel fast, loud, and noisy. For example, death metal has high energy, while a Bach prelude scores low on the scale.",
+  ],
+  [
+    "valence",
+    `A measure from 0.0 to 1.0 describing the musical positiveness conveyed by a track. Tracks with high valence sound more positive (e.g. happy, cheerful, euphoric), while tracks with low valence sound more negative (e.g. sad, depressed, angry).`,
+  ],
+  [
+    "instrumentalness",
+    `Predicts whether a track contains no vocals. "Ooh" and "aah" sounds are treated as instrumental in this context. Rap or spoken word tracks are clearly "vocal". The closer the instrumentalness value is to 1.0, the greater likelihood the track contains no vocal content. Values above 0.5 are intended to represent instrumental tracks, but confidence is higher as the value approaches 1.0.`,
+  ],
+  [
+    "liveness",
+    `Detects the presence of an audience in the recording. Higher liveness values represent an increased probability that the track was performed live. A value above 0.8 provides strong likelihood that the track is live.`,
+  ],
+  [
+    "speechiness",
+    `Speechiness detects the presence of spoken words in a track. The more exclusively speech-like the recording (e.g. talk show, audio book, poetry), the closer to 1.0 the attribute value.`,
+  ],
 ];
 
 const DimensionSelector = ({
@@ -89,13 +119,23 @@ const DimensionSelector = ({
           onChange(e as keyof TracksFeaturesResponse["audio_features"][number])
         }
       >
-        <SelectTrigger>
-          <SelectValue placeholder="Select a dimension" />
+        <SelectTrigger
+          className={cn(
+            buttonVariants({ variant: "secondary" }),
+            "flex items-center justify-between gap-4",
+          )}
+        >
+          <SelectValue placeholder="Select a dimension">{value}</SelectValue>
         </SelectTrigger>
         <SelectContent>
-          {dimensions.map((dimension) => (
-            <SelectItem key={dimension} value={dimension}>
+          {dimensions.map(([dimension, description]) => (
+            <SelectItem
+              key={dimension}
+              value={dimension}
+              className="flex flex-col gap-2 items-start max-w-80"
+            >
               {dimension}
+              <p className="text-muted-foreground text-xs">{description}</p>
             </SelectItem>
           ))}
         </SelectContent>
@@ -105,15 +145,13 @@ const DimensionSelector = ({
 };
 
 export default function Playlist() {
-  const { playlist, tracks, features } = useLoaderData<typeof loader>();
+  const { tracks, features } = useLoaderData<typeof loader>();
   const [hoveredPoint, setHoveredPoint] = useState<PointBaseProps | null>(null);
   const [x, setX] =
-    useState<keyof TracksFeaturesResponse["audio_features"][number]>(
-      "acousticness",
-    );
+    useState<keyof TracksFeaturesResponse["audio_features"][number]>("valence");
   const [y, setY] =
     useState<keyof TracksFeaturesResponse["audio_features"][number]>(
-      "danceability",
+      "instrumentalness",
     );
   const [z, setZ] =
     useState<keyof TracksFeaturesResponse["audio_features"][number]>("energy");
@@ -158,17 +196,21 @@ export default function Playlist() {
   }, [features, tracks]);
   const data = useMemo(() => {
     return features.audio_features.map((feature) => ({
-      position: [feature[x], feature[y], feature[z]] as [
-        number,
-        number,
-        number,
-      ],
+      position: [feature[x], feature[y], feature[z]].map(
+        (n) => Number(n) * 1.5,
+      ) as [number, number, number],
       metaData: {
         uuid: feature.id,
         actualLabel: `${featuresAndTracksByTrackId.get(feature.id)?.track.name ?? feature.id}\n${featuresAndTracksByTrackId
           .get(feature.id)
           ?.track?.artists.map(({ name }) => name)
-          .join(", ")}`,
+          .join(", ")}\n\n${[
+          [x, feature[x]],
+          [y, feature[y]],
+          [z, feature[z]],
+        ]
+          .map(([a, b]) => `${a}: ${Math.ceil(Number(b) * 100)}%`)
+          .join("\n")}`,
       },
     })) satisfies PointBaseProps[];
   }, [features, featuresAndTracksByTrackId, x, y, z]);
@@ -176,7 +218,15 @@ export default function Playlist() {
   return (
     <div className="h-full w-full relative">
       <ThreeDimensionalCanvas camera={{ position: [5, 5, 5], zoom: 10 }}>
-        <pointLight position={[10, 10, 10]} />
+        <ambientLight intensity={Math.PI / 2} />
+        <spotLight
+          position={[10, 10, 10]}
+          angle={0.15}
+          penumbra={1}
+          decay={0}
+          intensity={Math.PI}
+        />
+        <pointLight position={[-10, -10, -10]} decay={0} intensity={Math.PI} />
         <ThreeDimensionalControls
           enablePan
           panSpeed={0.15}
@@ -188,8 +238,10 @@ export default function Playlist() {
           pointProps={{ color: "#22C55E" }}
           onPointHovered={setHoveredPoint}
           onPointerLeave={() => setHoveredPoint(null)}
+          material="meshMatcap"
         />
-        <axesHelper />
+        <gridHelper />
+        <axesHelper position={[-0.1, -0.1, -0.1]} />
       </ThreeDimensionalCanvas>
       {mousePosition && hoveredPoint && (
         <Card
