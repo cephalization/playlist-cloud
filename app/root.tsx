@@ -1,14 +1,25 @@
 import type { LinksFunction, MetaFunction } from "@remix-run/node";
 import {
+  Link,
   Links,
   Meta,
   Outlet,
   Scripts,
   ScrollRestoration,
+  useRouteError,
 } from "@remix-run/react";
 
 import "./tailwind.css";
+import { buttonVariants } from "~/components/ui/button";
+import {
+  Card,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "~/components/ui/card";
 import { TooltipProvider } from "~/components/ui/tooltip";
+import { cn } from "~/lib/utils";
 
 export const meta: MetaFunction = () => {
   return [
@@ -56,3 +67,31 @@ export default function App() {
     </TooltipProvider>
   );
 }
+
+export const ErrorBoundary = () => {
+  return (
+    <html>
+      <head>
+        <title>Playlist Cloud | Error</title>
+        <Meta />
+        <Links />
+      </head>
+      <body className="h-screen w-screen flex flex-col items-center justify-center">
+        <Card>
+          <CardHeader>
+            <CardTitle>Something is broken...</CardTitle>
+            <CardDescription>
+              Sorry about that! Maybe try logging in again?
+            </CardDescription>
+          </CardHeader>
+          <CardFooter>
+            <Link className={cn(buttonVariants())} to="/login">
+              Login again
+            </Link>
+          </CardFooter>
+        </Card>
+        <Scripts />
+      </body>
+    </html>
+  );
+};

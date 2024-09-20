@@ -125,6 +125,7 @@ function handleBrowserRequest(
           pipe(body);
         },
         onShellError(error: unknown) {
+          console.log("shell error");
           reject(error);
         },
         onError(error: unknown) {
@@ -133,6 +134,7 @@ function handleBrowserRequest(
           // errors encountered during initial shell rendering since they'll
           // reject and get logged in handleDocumentRequest.
           if (shellRendered) {
+            console.log("generic error");
             console.error(error);
           }
         },

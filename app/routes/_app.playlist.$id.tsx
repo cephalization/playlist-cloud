@@ -45,12 +45,12 @@ export const loader = async (args: LoaderFunctionArgs) => {
     );
   } catch (e) {
     if (e instanceof ZodError) {
+      // this will catch any malformed responses from the Spotify API
+      // and by malformed, I mean my zod schemas must be too strict
+      console.log("zod error rendering playlist details page", e.message);
       throw redirect("/");
     }
-    if (e instanceof Promise) {
-      const r = await e;
-      throw r;
-    }
+
     throw e;
   }
 };

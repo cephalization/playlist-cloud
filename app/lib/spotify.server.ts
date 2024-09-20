@@ -38,7 +38,7 @@ export class SpotifyClient {
     if (response.status === 401 && retry && this.onRefresh) {
       console.log("refreshing token in client");
       // this should throw a redirect
-      throw this.onRefresh();
+      throw await this.onRefresh();
     } else if (response.status === 401) {
       throw new Error("Unauthorized");
     }

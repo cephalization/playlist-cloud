@@ -65,6 +65,10 @@ export const getAuth = async (
       }),
     };
   } catch (e) {
+    if (e instanceof Promise) {
+      const r = await e;
+      throw r;
+    }
     if (e instanceof Response && e.status === 302) {
       throw e;
     }
