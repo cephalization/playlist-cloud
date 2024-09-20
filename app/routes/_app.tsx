@@ -113,7 +113,7 @@ export default function Index() {
                         32,
                       )}
                       width={Math.min(playlist.images.at(-1)?.width ?? 32, 32)}
-                      className="rounded-md"
+                      className="rounded-sm"
                     />
                   )}
                   <span className="truncate">{playlist.name}</span>

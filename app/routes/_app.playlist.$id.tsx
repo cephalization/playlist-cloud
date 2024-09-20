@@ -40,7 +40,7 @@ export const loader = async (args: LoaderFunctionArgs) => {
       tracks.items.map(({ track }) => track.id),
     );
     return json(
-      { tracks, features },
+      { tracks, features, playlist },
       { headers: { "Cache-Control": "private, max-age=300" } },
     );
   } catch (e) {
@@ -155,7 +155,7 @@ const DimensionSelector = ({
 };
 
 export default function Playlist() {
-  const { tracks, features } = useLoaderData<typeof loader>();
+  const { tracks, features, playlist } = useLoaderData<typeof loader>();
   const [autoplay, setAutoplay] = useState(true);
   const [hideControls, setHideControls] = useState(false);
   const [hoveredPoint, setHoveredPoint] = useState<PointBaseProps | null>(null);
@@ -293,30 +293,55 @@ export default function Playlist() {
       {(frozenMousePosition || mousePosition) &&
         (selectedPoint || hoveredPoint) && (
           <Card
-            className="fixed z-50 p-4 shadow-2xl bg-secondary outline outline-primary/30"
+            className={cn(
+              "transition-all fixed z-50 p-4 shadow-2xl bg-secondary outline outline-primary/30",
+              selectedPoint && "outline outline-primary",
+            )}
             style={getStyleFromCoordinates(
               frozenMousePosition?.x ?? mousePosition?.x ?? 0,
               frozenMousePosition?.y ?? mousePosition?.y ?? 0,
             )}
           >
             <CardDescription className="flex flex-col gap-2 select-none">
-              <img
-                src={
-                  featuresAndTracksByTrackId
-                    .get(
-                      selectedPoint?.metaData.uuid ??
-                        hoveredPoint?.metaData.uuid ??
-                        "",
-                    )
-                    ?.track.album.images.at(-1)?.url
-                }
-                alt={
-                  selectedPoint?.metaData.actualLabel ??
-                  hoveredPoint?.metaData.actualLabel ??
-                  ""
-                }
-                className="w-14 h-14"
-              />
+              <div className="flex items-center justify-between gap-8">
+                <img
+                  src={
+                    featuresAndTracksByTrackId
+                      .get(
+                        selectedPoint?.metaData.uuid ??
+                          hoveredPoint?.metaData.uuid ??
+                          "",
+                      )
+                      ?.track.album.images.at(-1)?.url
+                  }
+                  alt={
+                    selectedPoint?.metaData.actualLabel ??
+                    hoveredPoint?.metaData.actualLabel ??
+                    ""
+                  }
+                  className="w-14 h-14"
+                />
+                <a
+                  href={
+                    featuresAndTracksByTrackId.get(
+                      selectedPoint?.metaData.uuid ?? "",
+                    )?.track.external_urls.spotify
+                  }
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={cn(
+                    buttonVariants({ variant: "outline" }),
+                    "flex items-center gap-2",
+                  )}
+                >
+                  <img
+                    src="/spotify-logo.svg"
+                    alt="Spotify"
+                    className="w-6 h-6"
+                  />
+                  <span>Play on Spotify</span>
+                </a>
+              </div>
               <span className="text-lg whitespace-pre-wrap">
                 {selectedPoint?.metaData.actualLabel ??
                   hoveredPoint?.metaData.actualLabel ??
@@ -345,6 +370,18 @@ export default function Playlist() {
             hideControls && "-translate-x-[125%]",
           )}
         >
+          <a
+            href={playlist.external_urls.spotify}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={cn(
+              buttonVariants({ variant: "outline" }),
+              "flex items-center gap-2",
+            )}
+          >
+            <img src="/spotify-logo.svg" alt="Spotify" className="w-6 h-6" />
+            View Playlist on Spotify
+          </a>
           <DimensionSelector
             value={x}
             onChange={(value) => setX(value)}
