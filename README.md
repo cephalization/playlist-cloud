@@ -2,6 +2,9 @@
 
 ![Playlist Cloud Visualizer](./assets/image.png)
 
+> [!NOTE]
+> The hosted version of Playlist Cloud is subject to an Allowlist for sign-ups. This is due to a restriction with the Spotify API for hobbyist apps 😅
+
 ## Features
 
 - Visualize your Spotify playlists in 3D space
